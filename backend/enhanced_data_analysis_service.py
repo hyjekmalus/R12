@@ -141,10 +141,8 @@ class EnhancedDataAnalyzer:
             # Generate profile report
             profile = ProfileReport(
                 df, 
-                title=f"Medical Data Analysis - {filename}",
                 explorative=True,
-                config_file=None,
-                **profile_config
+                config_file=None
             )
             
             # Save HTML report
