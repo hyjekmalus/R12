@@ -47,6 +47,6 @@ packaging>=20.0
 narwhals>=1.46.0
 threadpoolctl>=3.6.0
 ydata-profiling>=4.6.0
-great-expectations>=0.18.0
+great-expectations>=0.18.0,<1.0.0
 sweetviz>=2.3.0
 patsy>=1.0.0
