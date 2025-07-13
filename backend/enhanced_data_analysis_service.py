@@ -583,18 +583,18 @@ class EnhancedDataAnalyzer:
         scores = []
         
         # Completeness score (missing data)
-        completeness = (1 - (df.isnull().sum().sum() / df.size)) * 100
+        completeness = float((1 - (df.isnull().sum().sum() / df.size)) * 100)
         scores.append(completeness)
         
         # Uniqueness score (for potential ID columns)
         uniqueness_scores = []
         for col in df.columns:
             if df[col].dtype == 'object' and any(id_term in col.lower() for id_term in ['id', 'patient']):
-                uniqueness = (df[col].nunique() / len(df)) * 100
+                uniqueness = float((df[col].nunique() / len(df)) * 100)
                 uniqueness_scores.append(uniqueness)
         
         if uniqueness_scores:
-            scores.append(np.mean(uniqueness_scores))
+            scores.append(float(np.mean(uniqueness_scores)))
         
         # Consistency score (no extreme outliers in numeric data)
         consistency_scores = []
@@ -604,13 +604,13 @@ class EnhancedDataAnalyzer:
                 iqr = q3 - q1
                 if iqr > 0:
                     outliers = df[(df[col] < q1 - 3*iqr) | (df[col] > q3 + 3*iqr)][col]
-                    consistency = (1 - len(outliers) / len(df)) * 100
+                    consistency = float((1 - len(outliers) / len(df)) * 100)
                     consistency_scores.append(consistency)
         
         if consistency_scores:
-            scores.append(np.mean(consistency_scores))
+            scores.append(float(np.mean(consistency_scores)))
         
-        return np.mean(scores) if scores else 75.0  # Default moderate score
+        return float(np.mean(scores)) if scores else 75.0  # Default moderate score
     
     def _add_medical_context_to_profiling(self, insights: Dict, df: pd.DataFrame) -> Dict[str, Any]:
         """
