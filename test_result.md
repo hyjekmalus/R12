@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Create an AI Data Scientist app for medical statistics where users upload CSV files and interact with Gemini LLM for data analysis in a 3-panel notebook-style interface with Python execution sandbox."
+user_problem_statement: "Create an AI Data Scientist app for medical statistics where users upload CSV files and interact with Gemini LLM for data analysis in a 3-panel notebook-style interface with Python execution sandbox. ENHANCED: Integrated advanced data profiling tools (ydata-profiling, Great Expectations, Sweetviz) to organize data before AI analysis with comprehensive medical data validation and rich interactive reports."
 
 backend:
   - task: "CSV File Upload API"
