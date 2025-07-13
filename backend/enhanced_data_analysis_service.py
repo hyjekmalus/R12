@@ -265,7 +265,7 @@ class EnhancedDataAnalyzer:
             print(f"Generating Sweetviz EDA report for {filename}")
             
             # Configure Sweetviz for medical data
-            config = sv.FeatureConfig(skip="", force_text=[], force_num=[])
+            config = sv.FeatureConfig(skip=[], force_text=[], force_num=[])
             
             # Generate analysis report
             report = sv.analyze(
