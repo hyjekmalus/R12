@@ -831,7 +831,7 @@ class ComprehensiveAnalysisResult(BaseModel):
     analysis_data: Dict = Field(default_factory=dict)  # Contains all three analysis results
     created_at: datetime = Field(default_factory=datetime.utcnow)
     confidence_interval: Optional[List[float]] = None
-    interpretation: str
+    interpretation: str = "Enhanced comprehensive analysis completed"
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     raw_results: Optional[Dict] = None
 
