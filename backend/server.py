@@ -34,6 +34,9 @@ from lifelines.statistics import logrank_test
 import warnings
 warnings.filterwarnings('ignore')
 
+# Import comprehensive data analysis service
+from data_analysis_service import ComprehensiveDataAnalyzer
+
 # New models for Julius AI-style sectioned analysis
 class AnalysisSection(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
