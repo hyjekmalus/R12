@@ -879,7 +879,7 @@ async def root():
 
 @api_router.post("/sessions")
 async def create_session(file: UploadFile = File(...)):
-    """Create a new chat session with CSV file upload"""
+    """Create a new chat session with CSV file upload and automatic comprehensive analysis"""
     try:
         # Validate file type
         if not file.filename.endswith('.csv'):
@@ -912,8 +912,51 @@ async def create_session(file: UploadFile = File(...)):
             csv_preview=preview
         )
         
-        # Save to database
+        # Save session to database first
         await db.chat_sessions.insert_one(session.dict())
+        
+        # Run comprehensive data analysis (asynchronously)
+        try:
+            analyzer = ComprehensiveDataAnalyzer()
+            analysis_results = analyzer.analyze_dataset(df, file.filename)
+            
+            # Save comprehensive analysis results
+            comprehensive_analysis = ComprehensiveAnalysisResult(
+                session_id=session.id,
+                filename=file.filename,
+                analysis_data=analysis_results
+            )
+            await db.comprehensive_analyses.insert_one(comprehensive_analysis.dict())
+            
+            # Create automatic chat messages with analysis results
+            await _create_analysis_chat_messages(session.id, analysis_results)
+            
+        except Exception as analysis_error:
+            # If analysis fails, log error but don't fail session creation
+            print(f"Analysis error for {file.filename}: {str(analysis_error)}")
+            
+            # Create a fallback message
+            fallback_message = ChatMessage(
+                session_id=session.id,
+                role="assistant",
+                content=f"""# 📊 Data Analysis Report for {file.filename}
+
+**Dataset Overview:**
+- **Size:** {df.shape[0]:,} rows × {df.shape[1]} columns
+- **Data Types:** {len(df.select_dtypes(include=[np.number]).columns)} numeric, {len(df.select_dtypes(include=['object']).columns)} text columns
+
+**Quick Summary:**
+The comprehensive analysis tools encountered an issue, but your data has been successfully uploaded and is ready for interactive analysis.
+
+**Next Steps:**
+- Use the chat interface to ask questions about your data
+- Request specific statistical analyses
+- Generate custom visualizations
+- Explore data patterns and relationships
+
+You can start by asking: "What are the key characteristics of this dataset?" or "Show me a correlation analysis."""
+            )
+            await db.chat_messages.insert_one(fallback_message.dict())
         
         return session
         
