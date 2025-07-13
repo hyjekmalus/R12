@@ -1253,6 +1253,46 @@ You can start by asking: "What are the key characteristics of this dataset?" or 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/sessions/{session_id}/profiling-report/{report_type}")
+async def get_profiling_report(session_id: str, report_type: str):
+    """Get HTML profiling reports (ydata-profiling, great-expectations, sweetviz)"""
+    try:
+        # Get the comprehensive analysis for this session
+        analysis = await db.comprehensive_analyses.find_one({"session_id": session_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        analysis_data = analysis.get('analysis_data', {})
+        
+        # Determine which report to serve based on report_type
+        report_path = None
+        if report_type == "profiling" and 'enhanced_profiling' in analysis_data:
+            profiling_result = analysis_data['enhanced_profiling']
+            if profiling_result.get('status') == 'success':
+                report_path = profiling_result.get('report_path')
+        
+        elif report_type == "validation" and 'medical_validation' in analysis_data:
+            validation_result = analysis_data['medical_validation']
+            if validation_result.get('status') == 'success':
+                report_path = validation_result.get('report_path')
+        
+        elif report_type == "eda" and 'exploratory_analysis' in analysis_data:
+            eda_result = analysis_data['exploratory_analysis']
+            if eda_result.get('status') == 'success':
+                report_path = eda_result.get('report_path')
+        
+        if not report_path or not os.path.exists(report_path):
+            raise HTTPException(status_code=404, detail=f"Report file not found for type: {report_type}")
+        
+        # Read and return the HTML content
+        with open(report_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        
+        return Response(content=html_content, media_type="text/html")
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/sessions")
 async def get_sessions():
     """Get all chat sessions"""
