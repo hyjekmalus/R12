@@ -819,6 +819,17 @@ class AnalysisResult(BaseModel):
     p_value: Optional[float] = None
     effect_size: Optional[float] = None
     confidence_interval: Optional[List[float]] = None
+    method: Optional[str] = None
+    results_summary: Optional[str] = None
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+class ComprehensiveAnalysisResult(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    filename: str
+    analysis_data: Dict = Field(default_factory=dict)  # Contains all three analysis results
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    confidence_interval: Optional[List[float]] = None
     interpretation: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     raw_results: Optional[Dict] = None
