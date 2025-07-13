@@ -46,3 +46,6 @@ fonttools>=4.38.0
 packaging>=20.0
 narwhals>=1.46.0
 threadpoolctl>=3.6.0
+ydata-profiling>=4.6.0
+great-expectations>=0.18.0
+sweetviz>=2.3.0
