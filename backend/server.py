@@ -1187,21 +1187,39 @@ async def create_session(file: UploadFile = File(...)):
         # Save session to database first
         await db.chat_sessions.insert_one(session.dict())
         
-        # Run comprehensive data analysis (asynchronously)
+        # Run enhanced comprehensive data analysis (asynchronously)
         try:
-            analyzer = ComprehensiveDataAnalyzer()
-            analysis_results = analyzer.analyze_dataset(df, file.filename)
+            # Try enhanced analysis first
+            enhanced_analyzer = EnhancedDataAnalyzer()
+            enhanced_results = enhanced_analyzer.analyze_dataset(df, file.filename)
             
-            # Save comprehensive analysis results
-            comprehensive_analysis = ComprehensiveAnalysisResult(
-                session_id=session.id,
-                filename=file.filename,
-                analysis_data=analysis_results
-            )
-            await db.comprehensive_analyses.insert_one(comprehensive_analysis.dict())
-            
-            # Create automatic chat messages with analysis results
-            await _create_analysis_chat_messages(session.id, analysis_results)
+            if "error" not in enhanced_results:
+                # Save enhanced analysis results
+                comprehensive_analysis = ComprehensiveAnalysisResult(
+                    session_id=session.id,
+                    filename=file.filename,
+                    analysis_data=enhanced_results
+                )
+                await db.comprehensive_analyses.insert_one(comprehensive_analysis.dict())
+                
+                # Create automatic chat messages with enhanced analysis results
+                await _create_enhanced_analysis_chat_messages(session.id, enhanced_results)
+            else:
+                # Fallback to basic analysis if enhanced fails
+                print(f"Enhanced analysis failed, falling back to basic analysis: {enhanced_results.get('error')}")
+                analyzer = ComprehensiveDataAnalyzer()
+                analysis_results = analyzer.analyze_dataset(df, file.filename)
+                
+                # Save basic analysis results
+                comprehensive_analysis = ComprehensiveAnalysisResult(
+                    session_id=session.id,
+                    filename=file.filename,
+                    analysis_data=analysis_results
+                )
+                await db.comprehensive_analyses.insert_one(comprehensive_analysis.dict())
+                
+                # Create automatic chat messages with basic analysis results
+                await _create_analysis_chat_messages(session.id, analysis_results)
             
         except Exception as analysis_error:
             # If analysis fails, log error but don't fail session creation
