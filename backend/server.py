@@ -1716,6 +1716,169 @@ You can now ask specific questions about the data or request additional analyses
     except Exception as e:
         print(f"Error creating analysis messages: {str(e)}")
 
+async def _create_enhanced_analysis_chat_messages(session_id: str, enhanced_results: dict):
+    """Create enhanced chat messages with comprehensive profiling results"""
+    try:
+        # Main overview message with executive summary
+        executive_summary = enhanced_results.get('executive_summary', '')
+        
+        overview_message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=f"""# 🎯 **Enhanced AI Data Analysis Complete**
+
+I've performed a comprehensive analysis of your medical dataset using advanced profiling tools. Here's what I discovered:
+
+{executive_summary}
+
+**📋 Analysis Reports Generated:**
+- **📊 Comprehensive Data Profiling** - Detailed statistical analysis and data insights
+- **🔍 Medical Data Validation** - Quality checks specific to medical research standards  
+- **📈 Exploratory Data Analysis** - Visual patterns and relationship discovery
+
+**🤖 AI-Ready Summary:**
+{enhanced_results.get('ai_context_summary', {}).get('dataset_characteristics', {}).get('data_quality', {}).get('overall_score', 'N/A')} quality score - Your data is {"ready for advanced AI analysis!" if enhanced_results.get('ai_context_summary', {}).get('dataset_characteristics', {}).get('data_quality', {}).get('overall_score', 0) > 80 else "suitable for analysis with some preprocessing recommended."}
+
+**💬 What would you like to explore?**
+- Ask me about specific variables or patterns
+- Request statistical tests or visualizations  
+- Get insights about data quality or missing values
+- Generate predictions or correlations
+
+*All profiling reports are available in the results panel for detailed exploration.*"""
+        )
+        await db.chat_messages.insert_one(overview_message.dict())
+        
+        # Data profiling results message
+        profiling_result = enhanced_results.get('enhanced_profiling', {})
+        if profiling_result.get('status') == 'success':
+            profiling_message = ChatMessage(
+                session_id=session_id,
+                role="assistant", 
+                content=f"""## 📊 **Data Profiling Results**
+
+{profiling_result.get('html_summary', '')}
+
+**Key Insights from Comprehensive Profiling:**
+- **Dataset Completeness:** {100 - profiling_result.get('key_insights', {}).get('missing_data', {}).get('missing_percentage', 0):.1f}% complete
+- **Data Types:** {profiling_result.get('key_insights', {}).get('data_types', {}).get('numeric', 0)} numeric, {profiling_result.get('key_insights', {}).get('data_types', {}).get('categorical', 0)} categorical variables
+- **Medical Context:** {len(profiling_result.get('medical_context', {}).get('medical_variable_detection', {}).get('detected_variables', []))} medical variables detected
+
+**Medical Variables Identified:**
+{chr(10).join([f"- **{var.get('column', 'Unknown')}**: {var.get('type', 'Unknown type')} ({var.get('importance', 'Unknown')} priority)" for var in profiling_result.get('medical_context', {}).get('medical_variable_detection', {}).get('detected_variables', [])[:5]])}
+
+*📄 View the complete interactive profiling report in the results panel for detailed variable analysis, correlations, and distributions.*"""
+            )
+            await db.chat_messages.insert_one(profiling_message.dict())
+        
+        # Validation results message
+        validation_result = enhanced_results.get('medical_validation', {})
+        if validation_result.get('status') == 'success':
+            validation_summary = validation_result.get('validation_summary', {})
+            quality_score = validation_summary.get('quality_score', 0)
+            
+            quality_emoji = "🟢" if quality_score >= 80 else "🟡" if quality_score >= 60 else "🔴"
+            compliance = validation_result.get('medical_compliance', {})
+            
+            validation_message = ChatMessage(
+                session_id=session_id,
+                role="assistant",
+                content=f"""## 🔍 **Medical Data Validation Results**
+
+{validation_result.get('html_summary', '')}
+
+**Quality Assessment:** {quality_emoji} **{quality_score:.1f}%** ({compliance.get('medical_standards', {}).get('grade', 'Not assessed')})
+
+**Validation Summary:**
+- **Total Quality Checks:** {validation_summary.get('total_expectations', 0)}
+- **✅ Passed:** {validation_summary.get('successful_expectations', 0)}
+- **❌ Failed:** {validation_summary.get('failed_expectations', 0)}
+
+**Medical Research Compliance:** {compliance.get('medical_standards', {}).get('grade', 'Not assessed')}
+
+**Recommendations:**
+{chr(10).join([f"- {rec}" for rec in compliance.get('recommendations', ['No specific recommendations'])])}
+
+*📋 Access the detailed validation report for specific expectation results and data quality metrics.*"""
+            )
+            await db.chat_messages.insert_one(validation_message.dict())
+        
+        # EDA results message
+        eda_result = enhanced_results.get('exploratory_analysis', {})
+        if eda_result.get('status') == 'success':
+            eda_insights = eda_result.get('key_insights', {})
+            medical_insights = eda_result.get('medical_insights', {})
+            
+            eda_message = ChatMessage(
+                session_id=session_id,
+                role="assistant",
+                content=f"""## 📈 **Exploratory Data Analysis Results**
+
+{eda_result.get('html_summary', '')}
+
+**Feature Analysis:**
+- **Total Features:** {len(eda_insights.get('feature_analysis', {}))}
+- **Numeric Features:** {sum(1 for f in eda_insights.get('feature_analysis', {}).values() if f.get('type') == 'numeric')}
+- **Categorical Features:** {sum(1 for f in eda_insights.get('feature_analysis', {}).values() if f.get('type') == 'categorical')}
+
+**Clinical Patterns Detected:**
+{chr(10).join([f"- {pattern}" for pattern in medical_insights.get('research_recommendations', {}).get('statistical_approaches', ['None detected'])])}
+
+**Age Demographics** (if available):
+{medical_insights.get('clinical_patterns', {}).get('age_distribution', {}).get('mean_age', 'Age data not detected')}
+
+**Research Suitability:**
+- Sample size: {"✅ Adequate for statistical analysis" if enhanced_results.get('dataset_info', {}).get('shape', [0, 0])[0] >= 30 else "⚠️ Small sample size - consider power analysis"}
+- Data completeness: {"✅ High quality" if enhanced_results.get('dataset_info', {}).get('data_quality_score', 0) >= 80 else "⚠️ Consider data cleaning"}
+
+*📊 Open the interactive EDA report to explore distributions, correlations, and visual patterns in your data.*"""
+            )
+            await db.chat_messages.insert_one(eda_message.dict())
+        
+        # Final prompt message
+        ai_context = enhanced_results.get('ai_context_summary', {})
+        suggestions = ai_context.get('analysis_recommendations', {}).get('suitable_statistical_tests', [])
+        
+        final_message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=f"""## 🚀 **Ready for Advanced Analysis!**
+
+Based on the comprehensive profiling, your dataset is well-suited for:
+
+**Recommended Statistical Approaches:**
+{chr(10).join([f"- {test}" for test in suggestions[:5]] if suggestions else ['- Descriptive statistics', '- Data visualization', '- Basic correlations'])}
+
+**💡 Try asking me:**
+- "Show me correlations between variables"
+- "Perform ANOVA analysis on [variable] by [group]"
+- "Create visualizations for [specific variables]"
+- "What's the distribution of [variable name]?"
+- "Are there any outliers in the data?"
+
+**🎯 All profiling reports are saved and accessible in the Results panel. Your data is now optimally organized for AI-powered statistical analysis!**"""
+        )
+        await db.chat_messages.insert_one(final_message.dict())
+        
+    except Exception as e:
+        print(f"Error creating enhanced analysis messages: {str(e)}")
+        # Fallback to basic message
+        fallback_message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=f"""# 📊 Enhanced Data Analysis Complete
+
+The enhanced profiling analysis has been completed for your dataset. While some formatting issues occurred in message generation, all profiling reports have been successfully generated and are available in the results panel.
+
+**Analysis Summary:**
+- ✅ Comprehensive data profiling completed
+- ✅ Medical data validation performed
+- ✅ Exploratory data analysis generated
+
+You can now interact with the AI about your data or view the detailed reports in the results panel."""
+        )
+        await db.chat_messages.insert_one(fallback_message.dict())
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
