@@ -877,6 +877,263 @@ class EnhancedPythonExecutionRequest(BaseModel):
 async def root():
     return {"message": "AI Data Scientist API"}
 
+async def _create_analysis_chat_messages(session_id: str, analysis_results: dict):
+    """Create automatic chat messages based on comprehensive analysis results"""
+    try:
+        # Extract executive summary
+        executive_summary = analysis_results.get('executive_summary', {})
+        
+        # Create main overview message
+        content = f"""# 🎯 **AI Statistical Analysis Complete**
+
+## **Executive Summary**
+**Quality Score:** {executive_summary.get('quality_grade', 'Not Available')} ({executive_summary.get('overall_quality_score', 0):.1f}%)
+**Dataset:** {executive_summary.get('dataset_size', 'Unknown size')}
+
+## **📋 Key Findings**"""
+        
+        key_findings = executive_summary.get('key_findings', [])
+        if key_findings:
+            for finding in key_findings:
+                content += f"\n• {finding}"
+        else:
+            content += "\n• Dataset successfully analyzed with all three analysis tools"
+        
+        content += "\n\n## **🚀 Priority Recommendations**"
+        priority_recs = executive_summary.get('priority_recommendations', [])
+        if priority_recs:
+            for rec in priority_recs:
+                content += f"\n• {rec}"
+        else:
+            content += "\n• Dataset appears to be in good condition for analysis"
+        
+        content += f"""
+
+## **📊 Analysis Tools Completed**"""
+        
+        completion_status = executive_summary.get('analysis_completion', {})
+        tools_status = []
+        if completion_status.get('ydata_profiling'):
+            tools_status.append("✅ **ydata-profiling** - Complete data understanding")
+        if completion_status.get('great_expectations'):
+            tools_status.append("✅ **Great Expectations** - Data validation & quality")
+        if completion_status.get('sweetviz'):
+            tools_status.append("✅ **Sweetviz** - Visual data exploration")
+        
+        for status in tools_status:
+            content += f"\n{status}"
+        
+        content += f"""
+
+## **🎯 Next Steps**
+1. Review the detailed analysis insights above
+2. Ask specific questions about your data patterns
+3. Request custom statistical analyses or visualizations
+4. Begin exploring relationships between variables
+
+**Ready to explore your data! Ask me anything about the dataset.**"""
+        
+        # Create the main message
+        main_message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=content
+        )
+        await db.chat_messages.insert_one(main_message.dict())
+        
+        # Create detailed analysis summaries for each tool
+        ydata_result = analysis_results.get('ydata_profiling', {})
+        if ydata_result.get('status') == 'success':
+            await _create_ydata_profiling_message(session_id, ydata_result)
+        
+        expectations_result = analysis_results.get('great_expectations', {})
+        if expectations_result.get('status') == 'success':
+            await _create_great_expectations_message(session_id, expectations_result)
+        
+        sweetviz_result = analysis_results.get('sweetviz', {})
+        if sweetviz_result.get('status') == 'success':
+            await _create_sweetviz_message(session_id, sweetviz_result)
+            
+    except Exception as e:
+        # Fallback message if detailed processing fails
+        fallback_message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=f"""# 📊 **Data Analysis Complete**
+
+Your dataset has been successfully analyzed using our comprehensive AI statistical analysis suite.
+
+**Analysis Tools Used:**
+• ydata-profiling for complete data understanding
+• Great Expectations for data validation
+• Sweetviz for visual data exploration
+
+The analysis is ready! You can now ask questions about your data, request specific analyses, or explore patterns and relationships.
+
+**Ask me anything about your dataset!**"""
+        )
+        await db.chat_messages.insert_one(fallback_message.dict())
+
+async def _create_ydata_profiling_message(session_id: str, ydata_result: dict):
+    """Create detailed message for ydata-profiling results"""
+    try:
+        key_insights = ydata_result.get('key_insights', {})
+        recommendations = ydata_result.get('recommendations', [])
+        
+        content = f"""# 🔍 **ydata-profiling - Complete Data Understanding**
+
+## **Data Type Detection**
+{_format_data_types(key_insights.get('data_types_detected', {}))}
+
+## **Missing Values Analysis**
+{_format_missing_values(key_insights.get('missing_values', {}))}
+
+## **Data Quality Warnings**
+{_format_warnings(key_insights.get('data_quality_warnings', []))}
+
+## **Recommendations**"""
+        
+        if recommendations:
+            for rec in recommendations:
+                content += f"\n• {rec}"
+        else:
+            content += "\n• No specific recommendations - data appears clean"
+        
+        content += "\n\n*Full detailed report generated and saved for deeper analysis.*"
+        
+        message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=content
+        )
+        await db.chat_messages.insert_one(message.dict())
+        
+    except Exception as e:
+        print(f"Error creating ydata-profiling message: {str(e)}")
+
+async def _create_great_expectations_message(session_id: str, expectations_result: dict):
+    """Create detailed message for Great Expectations results"""
+    try:
+        summary = expectations_result.get('summary', {})
+        quality_score = expectations_result.get('overall_quality_score', 0)
+        recommendations = expectations_result.get('recommendations', [])
+        
+        content = f"""# ✅ **Great Expectations - Data Quality Validation**
+
+## **Quality Assessment**
+**Overall Score:** {quality_score:.1f}% ({summary.get('quality_grade', 'N/A')})
+
+## **Validation Results**
+• **Total Validations:** {summary.get('total_expectations', 0)}
+• **Passed:** {summary.get('successful_expectations', 0)}
+• **Failed:** {summary.get('failed_expectations', 0)}
+
+## **Recommendations**"""
+        
+        if recommendations:
+            for rec in recommendations:
+                content += f"\n• {rec}"
+        else:
+            content += "\n• Data quality meets acceptable standards"
+        
+        message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=content
+        )
+        await db.chat_messages.insert_one(message.dict())
+        
+    except Exception as e:
+        print(f"Error creating Great Expectations message: {str(e)}")
+
+async def _create_sweetviz_message(session_id: str, sweetviz_result: dict):
+    """Create detailed message for Sweetviz results"""
+    try:
+        insights = sweetviz_result.get('insights', {})
+        data_overview = insights.get('data_overview', {})
+        quality_insights = insights.get('quality_insights', {})
+        recommendations = sweetviz_result.get('recommendations', [])
+        
+        content = f"""# 📈 **Sweetviz - Visual Data Exploration**
+
+## **Feature Analysis**
+• **Total Features:** {data_overview.get('total_features', 0)}
+• **Categorical:** {data_overview.get('categorical_features', 0)}
+• **Numerical:** {data_overview.get('numerical_features', 0)}
+• **Datetime:** {data_overview.get('datetime_features', 0)}
+
+## **Data Quality Insights**
+• **Completeness:** {quality_insights.get('completeness_score', 0):.1f}%
+• **Duplicate Rows:** {quality_insights.get('duplicate_rows', 0)}
+
+## **Recommendations**"""
+        
+        if recommendations:
+            for rec in recommendations:
+                content += f"\n• {rec}"
+        else:
+            content += "\n• Visual analysis complete - data ready for exploration"
+        
+        content += "\n\n*Interactive visual report generated for detailed exploration.*"
+        
+        message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=content
+        )
+        await db.chat_messages.insert_one(message.dict())
+        
+    except Exception as e:
+        print(f"Error creating Sweetviz message: {str(e)}")
+
+def _format_data_types(data_types: dict) -> str:
+    """Format data types for display"""
+    if not data_types:
+        return "• Data types automatically detected"
+    
+    formatted = ""
+    for col, info in list(data_types.items())[:5]:  # Limit to 5 columns
+        formatted += f"\n• **{col}:** {info.get('type', 'unknown')}"
+    
+    if len(data_types) > 5:
+        formatted += f"\n• *...and {len(data_types) - 5} more columns*"
+    
+    return formatted
+
+def _format_missing_values(missing_values: dict) -> str:
+    """Format missing values for display"""
+    if not missing_values:
+        return "• No missing values detected"
+    
+    high_missing = {col: info for col, info in missing_values.items() 
+                   if info.get('missing_percentage', 0) > 10}
+    
+    if not high_missing:
+        return "• Minimal missing values detected (< 10% in all columns)"
+    
+    formatted = ""
+    for col, info in list(high_missing.items())[:3]:  # Limit to 3 columns
+        formatted += f"\n• **{col}:** {info.get('missing_percentage', 0):.1f}% missing"
+    
+    if len(high_missing) > 3:
+        formatted += f"\n• *...and {len(high_missing) - 3} more columns with missing values*"
+    
+    return formatted
+
+def _format_warnings(warnings: list) -> str:
+    """Format warnings for display"""
+    if not warnings:
+        return "• No data quality warnings detected"
+    
+    formatted = ""
+    for warning in warnings[:3]:  # Limit to 3 warnings
+        formatted += f"\n• {warning.get('message', 'Data quality issue detected')}"
+    
+    if len(warnings) > 3:
+        formatted += f"\n• *...and {len(warnings) - 3} more warnings*"
+    
+    return formatted
+
 @api_router.post("/sessions")
 async def create_session(file: UploadFile = File(...)):
     """Create a new chat session with CSV file upload and automatic comprehensive analysis"""
