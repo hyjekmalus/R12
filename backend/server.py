@@ -35,7 +35,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Import comprehensive data analysis service
-from data_analysis_service import ComprehensiveDataAnalyzer
+from simple_data_analysis_service import ComprehensiveDataAnalyzer
 
 # New models for Julius AI-style sectioned analysis
 class AnalysisSection(BaseModel):
