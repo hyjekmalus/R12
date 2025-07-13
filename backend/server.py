@@ -873,6 +873,20 @@ class EnhancedPythonExecutionRequest(BaseModel):
     auto_section: bool = True  # Whether to auto-detect analysis sections
 
 # API Routes
+# Initialize comprehensive data analyzer
+data_analyzer = ComprehensiveDataAnalyzer()
+
+@api_router.get("/sessions/{session_id}/comprehensive-analysis")
+async def get_comprehensive_analysis(session_id: str):
+    """Get comprehensive analysis results for a session"""
+    try:
+        analysis = await db.comprehensive_analyses.find_one({"session_id": session_id})
+        if not analysis:
+            raise HTTPException(status_code=404, detail="Comprehensive analysis not found")
+        return ComprehensiveAnalysisResult(**analysis)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/")
 async def root():
     return {"message": "AI Data Scientist API"}
