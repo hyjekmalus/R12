@@ -497,24 +497,24 @@ class EnhancedDataAnalyzer:
         try:
             insights = {
                 "dataset_size": {
-                    "rows": len(df),
-                    "columns": len(df.columns),
-                    "memory_usage_mb": df.memory_usage().sum() / 1024 / 1024
+                    "rows": int(len(df)),
+                    "columns": int(len(df.columns)),
+                    "memory_usage_mb": float(df.memory_usage().sum() / 1024 / 1024)
                 },
                 "data_types": {
-                    "numeric": len(df.select_dtypes(include=[np.number]).columns),
-                    "categorical": len(df.select_dtypes(include=['object']).columns),
-                    "datetime": len(df.select_dtypes(include=['datetime64']).columns)
+                    "numeric": int(len(df.select_dtypes(include=[np.number]).columns)),
+                    "categorical": int(len(df.select_dtypes(include=['object']).columns)),
+                    "datetime": int(len(df.select_dtypes(include=['datetime64']).columns))
                 },
                 "missing_data": {
-                    "total_missing": df.isnull().sum().sum(),
-                    "missing_percentage": (df.isnull().sum().sum() / df.size) * 100,
-                    "columns_with_missing": df.isnull().any().sum(),
-                    "complete_rows": len(df.dropna())
+                    "total_missing": int(df.isnull().sum().sum()),
+                    "missing_percentage": float((df.isnull().sum().sum() / df.size) * 100),
+                    "columns_with_missing": int(df.isnull().any().sum()),
+                    "complete_rows": int(len(df.dropna()))
                 },
                 "duplicates": {
-                    "duplicate_rows": df.duplicated().sum(),
-                    "duplicate_percentage": (df.duplicated().sum() / len(df)) * 100
+                    "duplicate_rows": int(df.duplicated().sum()),
+                    "duplicate_percentage": float((df.duplicated().sum() / len(df)) * 100)
                 }
             }
             
@@ -535,7 +535,7 @@ class EnhancedDataAnalyzer:
                 
                 insights["correlations"] = {
                     "high_correlation_pairs": high_corr_pairs,
-                    "total_numeric_columns": len(numeric_cols)
+                    "total_numeric_columns": int(len(numeric_cols))
                 }
             
             return insights
