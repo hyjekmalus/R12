@@ -562,9 +562,9 @@ class EnhancedDataAnalyzer:
                     "type": "numeric",
                     "unique_values": int(col_data.nunique()),
                     "missing_count": int(col_data.isnull().sum()),
-                    "mean": float(col_data.mean()) if not col_data.empty else None,
-                    "std": float(col_data.std()) if not col_data.empty else None,
-                    "skewness": float(col_data.skew()) if not col_data.empty else None
+                    "mean": float(col_data.mean()) if not col_data.empty and not pd.isna(col_data.mean()) else None,
+                    "std": float(col_data.std()) if not col_data.empty and not pd.isna(col_data.std()) else None,
+                    "skewness": float(col_data.skew()) if not col_data.empty and not pd.isna(col_data.skew()) else None
                 }
             else:
                 insights["feature_analysis"][column] = {
