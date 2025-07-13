@@ -1372,6 +1372,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+async def _create_analysis_chat_messages(session_id: str, analysis_results: dict):
+    """Create automatic chat messages based on analysis results"""
+    try:
+        # Create initial message with overview
+        overview_message = ChatMessage(
+            session_id=session_id,
+            role="assistant",
+            content=f"""# 📊 Automated Data Analysis Report
+
+I've completed an initial analysis of your dataset. Here are the key findings:
+
+{analysis_results.get('summary', 'Analysis completed successfully.')}
+
+You can now ask specific questions about the data or request additional analyses."""
+        )
+        await db.chat_messages.insert_one(overview_message.dict())
+        
+        # Add detailed findings if available
+        if analysis_results.get('detailed_findings'):
+            details_message = ChatMessage(
+                session_id=session_id,
+                role="assistant",
+                content=analysis_results['detailed_findings']
+            )
+            await db.chat_messages.insert_one(details_message.dict())
+            
+    except Exception as e:
+        print(f"Error creating analysis messages: {str(e)}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
